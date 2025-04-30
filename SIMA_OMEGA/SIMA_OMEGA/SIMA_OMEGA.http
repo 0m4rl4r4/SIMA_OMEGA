@@ -1,0 +1,6 @@
+@SIMA_OMEGA_HostAddress = http://localhost:5191
+
+GET {{SIMA_OMEGA_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
