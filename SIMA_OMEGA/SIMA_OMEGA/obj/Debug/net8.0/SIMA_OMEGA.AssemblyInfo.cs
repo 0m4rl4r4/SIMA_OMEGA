@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SIMA_OMEGA")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3ad2ae803bd80d3fcf211398c4f475ccfd1aaffe")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("SIMA_OMEGA")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SIMA_OMEGA")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

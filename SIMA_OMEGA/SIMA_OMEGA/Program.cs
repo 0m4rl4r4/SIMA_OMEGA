@@ -7,6 +7,9 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
 using SIMA_OMEGA.Profile;
+using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +18,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+
+
 //Configurar la base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
+
 
 // Agrega servicios de CORS
 builder.Services.AddCors(options =>
@@ -33,16 +39,35 @@ builder.Services.AddCors(options =>
 
 //Configurar JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["LlaveJWT"]!)),
-        ClockSkew = TimeSpan.Zero
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false, // No valida el emisor (útil para desarrollo)
+            ValidateAudience = false, // No valida la audiencia
+            ValidateLifetime = true, // Valida si el token ha expirado
+            ValidateIssuerSigningKey = true, // Valida la firma del token
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["LlaveJWT"]!)),
+            ClockSkew = TimeSpan.Zero // Sin tolerancia en la expiración del token
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Permite recibir tokens directamente sin necesidad de prefijo "Bearer"
+                var authorizationHeader = context.Request.Headers["Authorization"];
+                if (!string.IsNullOrEmpty(authorizationHeader))
+                {
+                    context.Token = authorizationHeader; // Extrae el token sin prefijo
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
+
 
 //Configurar Swagger para JWT (Bearrer)
 builder.Services.AddSwaggerGen(c =>
@@ -78,6 +103,7 @@ builder.Services.AddSwaggerGen(c =>
 //builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 
+
 builder.Services.AddControllers()
     .AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles)
     .AddNewtonsoftJson();
@@ -98,27 +124,68 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     });
 }
 
+app.MapPost("/api/plant/predict", async (IFormFile file) =>
+{
+    if (file == null || file.Length == 0)
+        return Results.BadRequest("No valid image file provided");
+
+    // Validar tipo de archivo
+    var allowedTypes = new[] { "image/jpeg", "image/png" };
+    if (!allowedTypes.Contains(file.ContentType))
+        return Results.BadRequest("Only JPEG or PNG images are allowed");
+
+    // Validar tamaño (ej. 5MB)
+    if (file.Length > 5 * 1024 * 1024)
+        return Results.BadRequest("Image too large (max 5MB)");
+
+    try
+    {
+        using var client = new HttpClient();
+        using var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream();
+        using var streamContent = new StreamContent(fileStream);
+
+        streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        content.Add(streamContent, "image", file.FileName);
+
+        var response = await client.PostAsync("http://127.0.0.1:3000/predict", content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            return Results.Problem($"Flask API error: {error}",
+                                  statusCode: (int)response.StatusCode);
+        }
+
+        var result = await response.Content.ReadAsStringAsync();
+        return Results.Ok(result);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Internal server error: {ex.Message}",
+                              statusCode: 500);
+    }
+})
+    .DisableAntiforgery()
+.WithName("PredictPlant")
+.Produces<string>(StatusCodes.Status200OK, contentType: "application/json")
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 app.UseCors("AllowAllOrigins");
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 
 app.UseStaticFiles();
 
 app.UseRouting();
 
 app.UseAuthentication();
-app.Use(async (context, next) =>
-{
-    if (!context.User.Identity.IsAuthenticated)
-    {
-        Console.WriteLine("Usuario no autenticado.");
-    }
-    else
-    {
-        Console.WriteLine("Usuario autenticado: " + context.User.Identity.Name);
-    }
-    await next();
-});
+
 
 app.UseAuthorization();
 

@@ -9,8 +9,7 @@ namespace SIMA_OMEGA.Entities
             public string Email { get; set; }
             [Required]
             public string Password { get; set; }
-            public string ConfirmPassword { get; set; }
-            public IFormFile? ProfileImage { get; set; }
+
         
     }
 }

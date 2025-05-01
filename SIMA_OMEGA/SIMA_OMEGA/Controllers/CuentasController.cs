@@ -71,10 +71,10 @@ namespace SIMA_OMEGA.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<RespuestaAuthentication>> Renovar()
         {
-            var emailClaim = HttpContext.User.Claims.FirstOrDefault(x => x.Type == "email");
+            var emailClaim = HttpContext.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email);
             if (emailClaim == null)
             {
-                return BadRequest(new MensajeError { Error = "Usuario no autenticado." });
+                return Unauthorized(new MensajeError { Error = "Usuario no autenticado." });
             }
 
             var credencialesUsuario = new CredencialesUsuario
@@ -82,8 +82,12 @@ namespace SIMA_OMEGA.Controllers
                 Email = emailClaim.Value
             };
 
-            return await ConstruirToken(credencialesUsuario);
+            // Genera un nuevo token
+            var nuevoToken = await ConstruirToken(credencialesUsuario);
+
+            return Ok(nuevoToken);
         }
+
 
         [HttpPost("registrar")]
         [Consumes("multipart/form-data")] // Indica que se aceptan datos de formulario de varias partes
@@ -102,22 +106,7 @@ namespace SIMA_OMEGA.Controllers
                 Email = credencialesUsuario.Email
             };
 
-            // Guardar la imagen si se proporciona
-            if (credencialesUsuario.ProfileImage != null)
-            {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images");
-                Directory.CreateDirectory(uploadsFolder);
 
-                var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(credencialesUsuario.ProfileImage.FileName)}";
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await credencialesUsuario.ProfileImage.CopyToAsync(stream);
-                }
-
-                usuario.ProfileImage = $"/profile-images/{fileName}"; // Asignar la URL de la imagen al usuario
-            }
 
             // Crear usuario en Identity
             var resultado = await userManager.CreateAsync(usuario, credencialesUsuario.Password);
@@ -133,16 +122,20 @@ namespace SIMA_OMEGA.Controllers
 
 
         [HttpPost("Login")]
+        [AllowAnonymous] // Permite que el endpoint sea accesible sin autenticación previa
         public async Task<ActionResult<RespuestaAuthentication>> Login(CredencialesUsuario credencialesUsuario)
         {
+            // Verificar si el usuario existe
             var usuario = await userManager.FindByEmailAsync(credencialesUsuario.Email);
             if (usuario == null)
             {
                 return BadRequest(new MensajeError { Error = "Usuario no registrado." });
             }
 
-            var resultado = await signInManager.PasswordSignInAsync(credencialesUsuario.Email,
+            // Validar la contraseña utilizando SignInManager
+            var resultado = await signInManager.PasswordSignInAsync(usuario.UserName,
                 credencialesUsuario.Password, isPersistent: false, lockoutOnFailure: false);
+
             if (resultado.Succeeded)
             {
                 return await ConstruirToken(credencialesUsuario);
@@ -150,6 +143,7 @@ namespace SIMA_OMEGA.Controllers
 
             return BadRequest(new MensajeError { Error = "Login incorrecto. Verifique sus credenciales." });
         }
+
 
         [HttpGet("perfil")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -171,7 +165,6 @@ namespace SIMA_OMEGA.Controllers
             {
                 Email = usuario.Email,
                 UserName = usuario.UserName,
-                ProfileImage = usuario is ApplicationUser appUser ? appUser.ProfileImage : null
             };
 
             return Ok(userProfile);

@@ -17,6 +17,8 @@ namespace SIMA_OMEGA
         public DbSet<SensorData> Sensores { get; set; }
 
         public DbSet<Evento> Eventos { get; set; }
+
+        public DbSet<Sembradio> Sembradios { get; set; }
     }
 }
 

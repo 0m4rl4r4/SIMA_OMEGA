@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\52639\\Documents\\GitHub\\LeafPic\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj": {}
+    "C:\\Users\\52639\\Desktop\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj": {}
   },
   "projects": {
-    "C:\\Users\\52639\\Documents\\GitHub\\LeafPic\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj": {
+    "C:\\Users\\52639\\Desktop\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\52639\\Documents\\GitHub\\LeafPic\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj",
+        "projectUniqueName": "C:\\Users\\52639\\Desktop\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj",
         "projectName": "SIMA_OMEGA",
-        "projectPath": "C:\\Users\\52639\\Documents\\GitHub\\LeafPic\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj",
+        "projectPath": "C:\\Users\\52639\\Desktop\\SIMA_OMEGA\\SIMA_OMEGA\\SIMA_OMEGA.csproj",
         "packagesPath": "C:\\Users\\52639\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\52639\\Documents\\GitHub\\LeafPic\\SIMA_OMEGA\\SIMA_OMEGA\\obj\\",
+        "outputPath": "C:\\Users\\52639\\Desktop\\SIMA_OMEGA\\SIMA_OMEGA\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\52639\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -75,6 +75,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.4.0, )"
+            },
+            "System.Net.Http": {
+              "target": "Package",
+              "version": "[4.3.4, )"
             }
           },
           "imports": [
